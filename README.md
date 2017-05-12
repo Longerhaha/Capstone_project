@@ -39,7 +39,8 @@
   我们可以从训练集可视化图片（下图）看出输入的图片大小不一样，所以我们要使用keras中的[图片生成器](https://keras.io/preprocessing/image/),其能够将猫狗图片reshape成一样大小的图片。
   
     ![train_pic_visualization](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/train_pic_visualization.png)
-### 上述的运行结果均可以从该[notebook文件](https://github.com/Longerhaha/Capstone_project/blob/master/Test%20picture%20sequence.ipynb)获得。
+   
+   上述的运行结果均可以从该[Test picture sequence.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Test%20picture%20sequence.ipynb)文件获得。
 ## 3、数据预处理
    keras的图片生成器有个从文件夹生成的办法，其函数是flow_from_directory。这个函数把要操作的文件夹的子目录分别当做一个类，根据这个思路我们可以对数据文件进行预处理，将猫、狗分别归于一个文件夹。由于在windows10下获取文件符号链接权限非常麻烦，所以另辟蹊径。在其他操作系统上可以参考[该文](https://github.com/ypwhs/dogs_vs_cats)
   
@@ -269,5 +270,6 @@
     
     预测这里我们用到了一个小技巧，我们将每个预测值限制到了 [0.005, 0.995] 个区间内，因为kaggle 官方的评估标准是 [LogLoss](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/details/evaluation)，对于预测正确的样本，0.995 和 1 相差无几，但是对于预测错误的样本，0 和 0.005 的差距非常大，是 15 和 2 的差别。参考 [LogLoss 如何处理无穷大问题](https://www.kaggle.com/wiki/LogLoss)，下面的表达式就是二分类问题的 LogLoss 定义。
 ## 8 总结
-
-   
+   首先要非常感谢这位[同学](https://github.com/ypwhs/dogs_vs_cats)提供的思路，但在实现方法上我们略有不用。
+   最后的结果如下![结果](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/result.png)，在第十一名。期间经历了很多挫折，最后都坚持了下来，非常感谢优达学城！
+   想压优化模型表现，可以尝试改变最近的全连接层结构，或者写个for循环调最优参数。另外可以使用更好的预训练模型（比如Inception V4等等）来预训练特征参数，或者对预训练模型进行微调（fine-tune），或者进行数据增强（data augmentation）等。
