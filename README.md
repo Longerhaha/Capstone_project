@@ -294,6 +294,9 @@
     ![OptiDropRate](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/OptiDropRate.png)
     
     从表格可以看出，当drop_rate = 0.2（对应文件序号1）时，Loss最低。对于这个结果符合我预期。此时排名为第七！冲入前十，心满意足！
+    
+    对应在kaggle上的结果展示图如下： 
+    ![BestModelLoss](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/BestModelLoss.png)
 ## 9 项目总结
     首先要非常感谢这位[同学](https://github.com/ypwhs/dogs_vs_cats)提供的思路。
 ### 9.1 项目思考
