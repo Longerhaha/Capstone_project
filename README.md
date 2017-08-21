@@ -35,9 +35,12 @@
     the number of train picture file is 25000
     the number of test picture file is 12500
 ### 2.3、图片的尺寸
-    我们可以从训练集可视化图片（下图）看出输入的图片大小不一样，所以我们要使用keras中的[图片生成器](https://keras.io/preprocessing/image/),其能 够将猫狗图片reshape成一样大小的图片。
-    ![train_pic_visualization](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/train_pic_visualization.png)
-    上述的运行结果均可以从该[Test picture sequence.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Test%20picture%20sequence.ipynb)文件获得。
+    ![训练集图片可视化](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/train_pic_visualization.png)
+    
+    我们可以从训练集可视化图片（上图）看出输入的图片大小不一样，所以我们要使用keras中的[图片生成器](https://keras.io/preprocessing/image/),其能 够将猫狗图片reshape成一样大小的图片。
+
+    上述的运行文件均可以从以下链接获得
+    [Test picture sequence](https://github.com/Longerhaha/Capstone_project/blob/master/Test%20picture%20sequence.ipynb)文件获得。
 ## 3、数据预处理
    keras的图片生成器有个从文件夹生成的办法，其函数是flow_from_directory。这个函数把要操作的文件夹的子目录分别当做一个类，根据这个思路我们可以对数据文件进行预处理，将猫、狗分别归于一个文件夹。由于在windows10下获取文件符号链接权限非常麻烦，所以另辟蹊径。在其他操作系统上可以参考[该文](https://github.com/ypwhs/dogs_vs_cats)
   
@@ -91,9 +94,7 @@
         ├── cat [12500 images]
         └── dog [12500 images]
 ## 4、模型预训练
-    在[Pre_deal of Incep&Xcep&Res.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Pre_deal%20of%20Incep%26Xcep%26Res.ipynb)文件，我们通过预处理获得猫狗图像经过Inception、Xception、ResNet50网络后的特征参数，时间大约花了40分钟。在[Pre_deal of VGG16&VGG.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Pre_deal%20of%20VGG16%26VGG.ipynb)文件，我们通过预处理获得猫狗图像经过VGG16、VGG19网络后的特征参数。时间大约花了12分钟。
-    
-    选取这五个模型的最直接原因就是keras里面有这个模型，其次这些模型的深度足够深，参数相对于其他模型比较小，比较占优。预处理函数如下
+    在[Pre_deal of Incep&Xcep&Res.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Pre_deal%20of%20Incep%26Xcep%26Res.ipynb)文件，我们通过预处理获得猫狗图像经过Inception、Xception、ResNet50网络后的特征参数，时间大约花了40分钟。在[Pre_deal of VGG16&VGG.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Pre_deal%20of%20VGG16%26VGG.ipynb)文件，我们通过预处理获得猫狗图像经过VGG16、VGG19网络后的特征参数。时间大约花了12分钟。选取这五个模型的最直接原因就是keras里面有这个模型，其次这些模型的深度足够深，参数相对于其他模型比较小，比较占优。预处理函数如下
     
     def write_gap(MODEL, image_size, lambda_func=None):
         width = image_size[0]
@@ -132,7 +133,7 @@
     train (25000, 2048)
     test (12500, 2048)
     label (25000,)
-  该特征参数可从[百度云](http://pan.baidu.com/s/1o7Qvp8m)下载。
+该特征参数可从[百度云](http://pan.baidu.com/s/1o7Qvp8m)下载。
 ## 5、载入特征文件参数
     
     载入特征参数其步骤与读h5文件是一样的，代码如下：
@@ -233,9 +234,17 @@
     20000/20000 [==============================] - 4s - loss: 0.0129 - acc: 0.9960 - val_loss: 0.0114 - val_acc: 0.9960
 ### 6.4 模型调优
 #### 6.4.1 模型组合调优
-    获得五个模型的预训练特征向量后，由于每个模型都有自己的特点，能获取的特征也不同，所以我们可以尝试将这五个模型的特征向量组合在一起，组合出更好的特征。五个模型的组合方式共有31种，模型组合的预测文件[TestPossibleMerge.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/TestPossibleMerge.ipynb)：
+    获得五个模型的预训练特征向量后，由于每个模型都有自己的特点，能获取的特征也不同，所以我们可以尝试将这五个模型的特征向量组合在一起，组合出更好的特征。五个模型的组合方式共有31种，模型组合的预测文件如下
+    
+    ![模型可能的组合生成的预测文件](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/ModelPossibleMergeFile.png)
+    
+    其对应的notebook文件是[TestPossibleMerge.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/TestPossibleMerge.ipynb)：
 #### 6.4.2 DropRate调优
-    在获取最优的模型组合后，我们继续选择模型中的全连接层drop_rate进行调优。选择了[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]进行调优，预测文件如下：[Test_BestModel_BestDropRate.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Test_BestModel_BestDropRate.ipynb)
+    在获取最优的模型组合后，我们继续选择模型中的全连接层drop_rate进行调优。选择了[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]进行调优，预测文件如下：
+    
+    ![DropRate调优生成的预测文件](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/OptiDropRateFile.png)
+    
+    其对应的notebook文件是[Test_BestModel_BestDropRate.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Test_BestModel_BestDropRate.ipynb)
 ## 7 根据已调好的参数预测test中的test2图像文件的类别，并生成csv文件,提交到[官网](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition)
     y_pred = model.predict(X_test, verbose=1)
     y_pred = y_pred.clip(min=0.005, max=0.995)
@@ -271,15 +280,20 @@
     9	10	0.005
     
     预测这里我们用到了一个小技巧，我们将每个预测值限制到了 [0.005, 0.995] 个区间内，因为kaggle 官方的评估标准是 [LogLoss](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/details/evaluation)，对于预测正确的样本，0.995 和 1 相差无几，但是对于预测错误的样本，0 和 0.005 的差距非常大，是 15 和 2 的差别。参考 [LogLoss 如何处理无穷大问题](https://www.kaggle.com/wiki/LogLoss)，下面的表达式就是二分类问题的 LogLoss 定义。
+    
+    生成预测文件的方式都是如此，模型调优的预测文件可从此修改。
 ## 8 项目结果
 ### 8.1 模型组合测试结果
     将31个模型组合文件提交至Kaggle上预测评分（一天之内只能提交五次），获得的Loss表格如下：
-    ![Mode_PossibleMerge_Result](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/Mode_PossibleMerge_Result.png)
-    从表格看出，序号为十五的提交文件获得的Loss最低，其对应的模型组合恰好是ResNet50、Xception、InceptionV3的模型组合，这就是为什么我们选择它做我们基准模型的原因。
+    ![OptiPossibleModelMerge](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/OptiPossibleModelMerge.png)
+    
+    从表格看出，序号为十五的提交文件获得的Loss最低，其对应的模型组合恰好是ResNet50、Xception、InceptionV3的模型组合，这就是我们在步骤6.1所搭建的模型。
     虽然0.03867的Loss的评分已经排名十二了，但我不满足于此，因为我确信这三个模型的预训练参数中肯定存在类似的，而我们知道，特征相似太多会导致网络模型过拟合，泛化能力减弱，所以我坚信可以通过调节DropRate来获得更佳的Loss。
 ### 8.2 DropRate调优测试结果
     将9个DropRate调优文件提交至Kaggle上预测评分（一天之内只能提交五次），获得的Loss表格如下：
-    从表格可以看出，当drop_rate = 0.2（对应文件序号1）时，Loss最低。对于这个结果符合我预期。此时排名为第七！冲入前十，心满意足！
+    ![OptiDropRate](https://github.com/Longerhaha/Capstone_project/blob/master/image_file/OptiDropRate.png)
+    
+    从表格可以看出，当drop_rate = 0.2（对应文件序号1）时，Loss最低。对于这个结果符合我预期。此时排名为第七！冲入前十，心满意足！
 ## 9 项目总结
     首先要非常感谢这位[同学](https://github.com/ypwhs/dogs_vs_cats)提供的思路。
 ### 9.1 项目思考
