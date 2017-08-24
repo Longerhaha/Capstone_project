@@ -51,38 +51,44 @@
     import shutil
     import time
     os.chdir(root_src)
+    #处理train文件夹
     #创建训练数据所需的文件夹
-    def rmrf_mkdir(dirname,ctl='train'):
+    if os.path.exists('train2'):
+        print('train file have been dealed before')
+        pass
+    else:
         start = time.time()
-        if os.path.exists(dirname):
-            pass
-        else:
-            if ctl=='train':
-                os.mkdir(dirname)
-                os.mkdir('train2/cat')
-                os.mkdir('train2/dog')
-                #获取当前狗和猫图片的文件名
-                train_filenames = os.listdir('train')
-                train_cat = filter(lambda x:x[:3] == 'cat', train_filenames)
-                train_dog = filter(lambda x:x[:3] == 'dog', train_filenames)
-                #创建train2文件夹，并将cat类和dog类图片归类到不同的文件夹中
-                for filename in train_cat:
-                    shutil.move('./train/'+filename, './train2/cat/'+filename)
+        os.mkdir('train2')
+        os.mkdir('train2/cat')
+        os.mkdir('train2/dog')
+        #获取当前狗和猫图片的文件名
+        train_filenames = os.listdir('train')
+        train_cat = filter(lambda x:x[:3] == 'cat', train_filenames)
+        train_dog = filter(lambda x:x[:3] == 'dog', train_filenames)
+        #创建train2文件夹，并将cat类和dog类图片归类到不同的文件夹中
+        for filename in train_cat:
+            shutil.move('./train/'+filename, './train2/cat/'+filename)
 
-                for filename in train_dog:
-                    shutil.move('./train/'+filename, './train2/dog/'+filename)
-            elif ctl=='test':
-                test_filenames = os.listdir(dirname.split('/')[0])
-                os.mkdir(dirname)
-                for filename in test_filenames:
-                    shutil.move('test/'+filename,dirname+'/'+filename)
-            else:
-                pass
+        for filename in train_dog:
+            shutil.move('./train/'+filename, './train2/dog/'+filename)
         end = time.time()
-        print('path deal time is %.5f'%round(end-start,5))
-
-    rmrf_mkdir('train2',ctl='train')  
-    rmrf_mkdir('test/test2',ctl='test')
+        print('path deal time is %.5f s'%round(end-start,5))   
+        
+    #处理test文件夹    
+    start = time.time()
+    if os.path.exists('test/test2'):
+        print('test file have been dealed before')
+        pass
+    else:
+        start = time.time()
+        test_filenames = os.listdir('test/test2'.split('/')[0])
+        os.mkdir('test/test2')
+        for filename in test_filenames:
+            shutil.move('test/'+filename,dirname+'/'+filename)
+        else:
+            pass
+        end = time.time()
+        print('path deal time is %.5f s'%round(end-start,5))
     
     其最终文件夹结构如下：
     ├── test 
@@ -96,38 +102,50 @@
 ## 4、模型预训练
     在[Pre_deal of Incep&Xcep&Res.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Pre_deal%20of%20Incep%26Xcep%26Res.ipynb)文件，我们通过预处理获得猫狗图像经过Inception、Xception、ResNet50网络后的特征参数，时间大约花了40分钟。在[Pre_deal of VGG16&VGG.ipynb](https://github.com/Longerhaha/Capstone_project/blob/master/Pre_deal%20of%20VGG16%26VGG.ipynb)文件，我们通过预处理获得猫狗图像经过VGG16、VGG19网络后的特征参数。时间大约花了12分钟。选取这五个模型的最直接原因就是keras里面有这个模型，其次这些模型的深度足够深，参数相对于其他模型比较小，比较占优。预处理函数如下
     
-    def write_gap(MODEL, image_size, lambda_func=None):
+    from keras.models import *
+    from keras.layers import *
+    from keras.applications import *
+    from keras.preprocessing.image import *
+    import numpy as np
+    import h5py
+    BatchSize = 16
+    def Predeal_GetFeatureVector(MODEL, image_size, lambda_func=None):
         width = image_size[0]
         height = image_size[1]
         input_tensor = Input((height, width, 3))
         x = input_tensor
+        #Inception、Xception需要输入图片尺寸一样大
         if lambda_func:
             x = Lambda(lambda_func)(x)
 
-        base_model = MODEL(input_tensor=x, weights='imagenet', include_top=False)
-        model = Model(base_model.input, GlobalAveragePooling2D()(base_model.output))
-
+        Predeal_model = MODEL(input_tensor=x, weights='imagenet', include_top=False)
+        #全局平均池化避免参数过大
+        model = Model(base_model.input, GlobalAveragePooling2D()(Predeal_model.output))
+        #图片数据生成器
         gen = ImageDataGenerator()
         train_generator = gen.flow_from_directory("train2", image_size, shuffle=False, 
-                                                  batch_size=16)
+                                                  batch_size=BatchSize)
         test_generator = gen.flow_from_directory("test", image_size, shuffle=False, 
-                                                 batch_size=16, class_mode=None)
-        train = model.predict_generator(train_generator, len(train_generator.filenames)/16)
-        test = model.predict_generator(test_generator, len(test_generator.filenames)/16)
+                                                 batch_size=BatchSize, class_mode=None)
+        train = model.predict_generator(train_generator, len(train_generator.filenames)/BatchSize)
+        #在keras中有改动，生成数目为batch_size* len(train_generator.filenames)/BatchSize
+        test = model.predict_generator(test_generator, len(test_generator.filenames)/BatchSize)
         print(type(train),train.shape) 
         print(type(test),test.shape) 
+        #保存参数为h5文件
         with h5py.File("gap_%s.h5"%(MODEL.__name__)) as h:
             h.create_dataset("train", data=train)
             h.create_dataset("test", data=test)
             h.create_dataset("label", data=train_generator.classes)
-    write_gap(ResNet50, (224, 224))
-    write_gap(InceptionV3, (299, 299), inception_v3.preprocess_input)
-    write_gap(Xception, (299, 299), xception.preprocess_input)
+        
+    start = time.time()  
+    Predeal_GetFeatureVector(ResNet50, (224, 224))
+    Predeal_GetFeatureVector(InceptionV3, (299, 299), inception_v3.preprocess_input)
+    Predeal_GetFeatureVector(Xception, (299, 299), xception.preprocess_input)
+    end = time.time()
+    print('one generator time is %d s'%round(end-start))
     
-    write_gap(VGG16,(224,224))
-    write_gap(VGG19,(224,224))
-    
-    Xception 、Inception V3 需要将数据限定在 (-1, 1) 的范围内，查keras这两个模型[使用办法](https://github.com/fchollet/keras/tree/master/keras/applications)可知，然后我们利用 GlobalAveragePooling2D 将卷积层平均池化，否则获得的模型参数文件太大且容易过拟合。随后我们定义了train_generator、test_generator，利用 model.predict_generator 函数来导出特征向量，这里要注意，为了遍历所以图片，我们需要设置predict_generator的steps需要设置为len(train(test)_generator.filenames)/16，最后我们选择了 ResNet50, Xception, Inception V3 这三个模型（经测试，联合这三个模型表现较好）。
+    Xception 、Inception V3 需要将数据限定在 (-1, 1) 的范围内，查keras这两个模型[使用办法](https://github.com/fchollet/keras/tree/master/keras/applications)可知，然后我们利用 GlobalAveragePooling2D 将卷积层平均池化，否则获得的模型参数文件太大且容易过拟合。随后我们定义了train_generator、test_generator，利用 model.predict_generator 函数来导出特征向量，这里要注意，为了遍历所以图片，我们需要设置predict_generator的steps需要设置为len(train(test)_generator.filenames)/BatchSize，最后我们选择了 ResNet50, Xception, Inception V3 这三个模型（经测试，联合这三个模型表现较好）。
     
     最后导出的 h5 文件包括三个 numpy 数组：
     train (25000, 2048)
@@ -305,7 +323,7 @@
 #### (2)可以利用不同模型的特征参数去组合出一个更好的模型，这个思维是以前没有见到过的，也是最有意思的地方。由于不同模型的组合，肯定会有部分特征相似，所以在全连接层要选取一个较好的DorpRate，这可以通过网格搜索或者列表循环实现。
 ### 9.2 改进方向
     这个项目的改进方向主要有以下几点：
-#### (1)可以选择更好的网咯模型导出预训练特征向量，比如InceptionV4、GoogleNet等。
-#### (2)可以再获取其他的猫狗图像进行fine-turn。
+#### (1)可以选择更好的网络模型导出预训练特征向量，比如InceptionV4、GoogleNet等。
+#### (2)可以通过猫狗大战官网提供的猫狗图像进行fine-tune。
 #### (3)可以进行数据增强、异常数据处理与相似预特征向量处理。
 
